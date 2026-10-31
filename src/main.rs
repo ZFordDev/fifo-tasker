@@ -1,3 +1,4 @@
+// We need to move this next outside main into a HUD folder, but for now it's here to get the HUD working.
 use eframe::egui;
 
 fn main() -> eframe::Result<()> {
@@ -25,11 +26,22 @@ impl eframe::App for TaskerApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let rect = ui.max_rect();
 
-        // Draw a translucent background with rounded corners.
+        // Draw the slightly lighter, translucent workspace.
         ui.painter().rect_filled(
-            rect.shrink(1.0),
-            12.0, // Corner radius.
-            egui::Color32::from_rgba_unmultiplied(32, 33, 36, 200), // RGBA colour.
+            rect.shrink(8.0),
+            12.0,
+            egui::Color32::from_rgba_unmultiplied(28, 37, 52, 200),
+        );
+
+        // Draw the dark blue outer border.
+        ui.painter().rect_stroke(
+            rect.shrink(4.0),
+            12.0,
+            egui::Stroke::new(
+                8.0,
+                egui::Color32::from_rgba_unmultiplied(17, 25, 40, 200),
+            ),
+            egui::StrokeKind::Inside,
         );
 
         // Temporary content while developing the HUD.
