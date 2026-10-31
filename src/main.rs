@@ -1,11 +1,18 @@
 // We need to move this next outside main into a HUD folder, but for now it's here to get the HUD working.
 use eframe::egui;
 
+// HUD appearance and layout.
+const HUD_WIDTH: f32 = 340.0;
+const HUD_HEIGHT: f32 = 420.0;
+const BORDER_WIDTH: f32 = 8.0;
+const CORNER_RADIUS: f32 = 12.0;
+const RESIZE_CORNER_SIZE: f32 = 16.0;
+
 fn main() -> eframe::Result<()> {
     // Configure the HUD window.
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([340.0, 420.0])
+            .with_inner_size([HUD_WIDTH, HUD_HEIGHT])
             .with_decorations(false) // Remove the native title bar and borders.
             .with_transparent(true) // Allow the desktop to show through.
             .with_always_on_top(), // Keep the HUD above other windows.
@@ -28,40 +35,44 @@ impl eframe::App for TaskerApp {
 
         // Draw the slightly lighter, translucent workspace.
         ui.painter().rect_filled(
-            rect.shrink(8.0),
-            12.0,
+            rect.shrink(BORDER_WIDTH),
+            CORNER_RADIUS,
             egui::Color32::from_rgba_unmultiplied(28, 37, 52, 200),
         );
 
         // Draw the dark blue outer border.
         ui.painter().rect_stroke(
-            rect.shrink(4.0),
-            12.0,
+            rect.shrink(BORDER_WIDTH / 2.0),
+            CORNER_RADIUS,
             egui::Stroke::new(
-                8.0,
+                BORDER_WIDTH,
                 egui::Color32::from_rgba_unmultiplied(17, 25, 40, 200),
             ),
             egui::StrokeKind::Inside,
         );
 
         // Grab a straight edge to move the HUD. The corners are saving themselves for resizing.
-        let border = rect.shrink(4.0);
+        let border = rect.shrink(BORDER_WIDTH / 2.0);
         let edges = [
+            // Top edge.
             egui::Rect::from_min_max(
-                border.min + egui::vec2(16.0, 0.0),
-                border.right_top() + egui::vec2(-16.0, 8.0),
+                border.min + egui::vec2(RESIZE_CORNER_SIZE, 0.0),
+                border.right_top() + egui::vec2(-RESIZE_CORNER_SIZE, BORDER_WIDTH),
             ),
+            // Bottom edge.
             egui::Rect::from_min_max(
-                border.left_bottom() + egui::vec2(16.0, -8.0),
-                border.max - egui::vec2(16.0, 0.0),
+                border.left_bottom() + egui::vec2(RESIZE_CORNER_SIZE, -BORDER_WIDTH),
+                border.max - egui::vec2(RESIZE_CORNER_SIZE, 0.0),
             ),
+            // Left edge.
             egui::Rect::from_min_max(
-                border.min + egui::vec2(0.0, 16.0),
-                border.left_bottom() + egui::vec2(8.0, -16.0),
+                border.min + egui::vec2(0.0, RESIZE_CORNER_SIZE),
+                border.left_bottom() + egui::vec2(BORDER_WIDTH, -RESIZE_CORNER_SIZE),
             ),
+            // Right edge.
             egui::Rect::from_min_max(
-                border.right_top() + egui::vec2(-8.0, 16.0),
-                border.max - egui::vec2(0.0, 16.0),
+                border.right_top() + egui::vec2(-BORDER_WIDTH, RESIZE_CORNER_SIZE),
+                border.max - egui::vec2(0.0, RESIZE_CORNER_SIZE),
             ),
         ];
         for (index, edge) in edges.into_iter().enumerate() {
