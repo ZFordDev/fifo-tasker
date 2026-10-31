@@ -44,6 +44,35 @@ impl eframe::App for TaskerApp {
             egui::StrokeKind::Inside,
         );
 
+        // Grab a straight edge to move the HUD. The corners are saving themselves for resizing.
+        let border = rect.shrink(4.0);
+        let edges = [
+            egui::Rect::from_min_max(
+                border.min + egui::vec2(16.0, 0.0),
+                border.right_top() + egui::vec2(-16.0, 8.0),
+            ),
+            egui::Rect::from_min_max(
+                border.left_bottom() + egui::vec2(16.0, -8.0),
+                border.max - egui::vec2(16.0, 0.0),
+            ),
+            egui::Rect::from_min_max(
+                border.min + egui::vec2(0.0, 16.0),
+                border.left_bottom() + egui::vec2(8.0, -16.0),
+            ),
+            egui::Rect::from_min_max(
+                border.right_top() + egui::vec2(-8.0, 16.0),
+                border.max - egui::vec2(0.0, 16.0),
+            ),
+        ];
+        for (index, edge) in edges.into_iter().enumerate() {
+            if ui
+                .interact(edge, ui.scope_id().with(index), egui::Sense::drag())
+                .drag_started_by(egui::PointerButton::Primary)
+            {
+                ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
+            }
+        }
+
         // Temporary content while developing the HUD.
         ui.vertical_centered(|ui| {
             ui.add_space(20.0);
