@@ -36,7 +36,7 @@ Everything you need to keep things flowing should be here.
 
 While it's too early to know for sure, I'm thinking:
 
-- 🦀 [Rust](https://rust-lang.org/) + [egui](https://github.com/emilk/egui) // seriously, use egui for everything; it's the new PySide!
+- 🦀 [Rust](https://rust-lang.org/) + [egui](https://github.com/emilk/egui)
 - 🗃️ [SQLite](https://www.sqlite.org/) via [rusqlite](https://github.com/rusqlite/rusqlite) or [SQLx](https://github.com/launchbadge/sqlx), although direct API is considered.
 - 📝 Markdown descriptions via either [comrak](https://github.com/kivikakk/comrak) or [egui_markdown](https://github.com/membrane-io/egui_markdown)
 - 🔒 Local-first. No accounts, no cloud, no telemetry, as per usual!
@@ -46,6 +46,10 @@ While it's too early to know for sure, I'm thinking:
 **Research & Development (R&D).**
 
 Currently somewhere between *"this is a great idea"* and *"why am I building another application?"*
+
+## Need info?
+the repos wiki is actively being worked on! you can see devlogs, and a few placeholder documents  
+Find it here 👉 [Wiki](https://github.com/ZFordDev/fifo-tasker/wiki)
 
 ## Licence
 
