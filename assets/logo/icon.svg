@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">FIFO Tasker</title>
+  <desc id="description">Three stacked task bars on a rounded navy tile. The first task becomes a mint arrow pointing forward.</desc>
+
+  <!-- Rounded navy tile, using the HUD's shape and border color. -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#111928"/>
+
+  <!-- First in, first out: the leading task is ready to move. -->
+  <path d="M16 16H39V11L51 22L39 33V28H16Z" fill="#54dbc0"/>
+
+  <!-- The next tasks wait their turn. No queue jumping, please. -->
+  <g fill="#edf3fa">
+    <rect x="16" y="35" width="27" height="7" rx="3.5"/>
+    <rect x="16" y="47" width="19" height="7" rx="3.5"/>
+  </g>
+</svg>
