@@ -34,12 +34,30 @@ Everything you need to keep things flowing should be here.
 
 ## Under the Hood
 
-While it's too early to know for sure, I'm thinking:
+**The chosen stack:**
 
-- 🦀 [Rust](https://rust-lang.org/) + [egui](https://github.com/emilk/egui)
-- 🗃️ [SQLite](https://www.sqlite.org/) via [rusqlite](https://github.com/rusqlite/rusqlite) or [SQLx](https://github.com/launchbadge/sqlx), although direct API is considered.
-- 📝 Markdown descriptions via either [comrak](https://github.com/kivikakk/comrak) or [egui_markdown](https://github.com/membrane-io/egui_markdown)
+- 🦀 [Rust](https://rust-lang.org/) + [egui](https://github.com/emilk/egui) for the application and UI.
 - 🔒 Local-first. No accounts, no cloud, no telemetry, as per usual!
+
+**Still investigating:**
+
+- 🗃️ [SQLite](https://www.sqlite.org/) via [rusqlite](https://github.com/rusqlite/rusqlite) or [SQLx](https://github.com/launchbadge/sqlx). Direct SQLite API access is also being considered.
+- 📝 Markdown descriptions via [comrak](https://github.com/kivikakk/comrak) or [egui_markdown](https://github.com/membrane-io/egui_markdown).
+
+## Files!
+
+The current source structure:
+
+```text
+src/
+├── main.rs              # Application entry point
+└── hud/                 # Floating HUD
+    ├── mod.rs           # TaskerApp and HUD content
+    ├── config.rs        # Settings and derived constants
+    └── frame.rs         # Workspace, border and dragging
+```
+
+The dashboard and shared task logic will get their own modules when development reaches them.
 
 ## Project Status
 
