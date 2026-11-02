@@ -5,5 +5,10 @@ edition = "2024"
 
 [dependencies]
 eframe = "0.37.0"
+directories = "6.0"
+getrandom = "0.3"
 image = { version = "0.25", default-features = false, features = ["png"] }
 tray-icon = { version = "0.26.1", default-features = false, features = ["ksni"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging"] }
