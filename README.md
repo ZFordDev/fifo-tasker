@@ -18,7 +18,7 @@ FIFO Tasker is a lightweight, local-first task manager for developers, hobbyists
 - 💤 **Forgot a project?** Optional reminders gently bring it back.
 
 > [!NOTE]
-> This is more of a shopping list over a feature list; the end result may vary.
+> These are planned features rather than a list of what's already implemented. The end result may vary.
 
 ## 🖥️ Two Ways to Procrastinate Productively
 
@@ -50,20 +50,37 @@ The current source structure:
 
 ```text
 src/
-├── main.rs              # Application entry point
-└── hud/                 # Floating HUD
-    ├── mod.rs           # TaskerApp and HUD content
-    ├── config.rs        # Settings and derived constants
-    └── frame.rs         # Workspace, border and dragging
+├── main.rs              # Startup and launch arguments
+├── app.rs               # Shared controller and window lifecycle
+├── tray.rs              # System tray menu and commands
+├── instance.rs          # Single-instance ownership and launch forwarding
+├── instance/
+│   └── tests.rs         # Startup, communication and recovery tests
+├── logic/
+│   └── mod.rs           # Shared application state and commands
+├── hud/                 # Floating HUD
+│   ├── mod.rs           # HUD content and controls
+│   ├── config.rs        # Settings and derived constants
+│   └── frame.rs         # Workspace, border and dragging
+└── dashboard/           # Placeholder dashboard
+    ├── mod.rs           # Dashboard content and controls
+    ├── config.rs        # Window and workspace settings
+    └── frame.rs         # Workspace and border drawing
 ```
 
-The dashboard and shared task logic will get their own modules when development reaches them.
+Task management and database storage are still to come.
 
 ## Project Status
 
 **Research & Development (R&D).**
 
 Currently somewhere between *"this is a great idea"* and *"why am I building another application?"*
+
+The current prototype has placeholder HUD and dashboard windows, a system tray, and single-instance launch handling. Closing the windows keeps the app running; use **Exit** in the tray to quit. Windows launch and lifecycle checks have been completed, while Ubuntu validation is still pending.
+
+From the repository directory, run `cargo run` to open the HUD. Running it again opens or focuses the existing dashboard. Use `cargo run -- --dashboard` to start directly in the dashboard.
+
+Next is a robust CLI and command/response handling, followed by database integration and actual task management. The to-do list still has a to-do list.
 
 ## Need info?
 the repos wiki is actively being worked on! you can see devlogs, and a few placeholder documents  
