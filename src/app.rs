@@ -1,7 +1,12 @@
 use eframe::egui;
+use std::sync::{
+    Arc, Mutex,
+    mpsc::{self, Receiver, Sender},
+};
 
 use crate::{
     dashboard, hud,
+    instance::Instance,
     logic::{AppState, Command},
     tray::Tray,
 };
@@ -33,26 +38,33 @@ impl Interface {
 pub(crate) struct TaskerApp {
     state: AppState,
     root: Interface,
-    hud: hud::TaskerApp,
-    dashboard: dashboard::DashboardApp,
+    hud: Arc<Mutex<hud::TaskerApp>>,
+    dashboard: Arc<Mutex<dashboard::DashboardApp>>,
+    window_sender: Sender<Command>,
+    window_commands: Receiver<Command>,
     tray: Tray,
+    instance: Instance,
 }
 
 impl TaskerApp {
-    pub(crate) fn new(state: AppState, root: Interface, tray: Tray) -> Self {
+    pub(crate) fn new(state: AppState, root: Interface, tray: Tray, instance: Instance) -> Self {
+        let (window_sender, window_commands) = mpsc::channel();
         Self {
             state,
             root,
-            hud: hud::TaskerApp,
-            dashboard: dashboard::DashboardApp,
+            hud: Arc::new(Mutex::new(hud::TaskerApp)),
+            dashboard: Arc::new(Mutex::new(dashboard::DashboardApp)),
+            window_sender,
+            window_commands,
             tray,
+            instance,
         }
     }
 
     fn show(&mut self, interface: Interface, ui: &mut egui::Ui) {
         let command = match interface {
-            Interface::Hud => self.hud.show(ui),
-            Interface::Dashboard => self.dashboard.show(ui),
+            Interface::Hud => self.hud.lock().unwrap().show(ui),
+            Interface::Dashboard => self.dashboard.lock().unwrap().show(ui),
         };
         if let Some(command) = command {
             self.handle(command, ui.ctx());
@@ -107,6 +119,14 @@ impl eframe::App for TaskerApp {
                 break;
             }
         }
+        if !self.state.exit_requested {
+            while let Ok(command) = self.window_commands.try_recv() {
+                self.handle(command, ctx);
+            }
+            while let Some(command) = self.instance.next_command() {
+                self.handle(command, ctx);
+            }
+        }
         if !self.state.exit_requested && ctx.input(|i| i.viewport().close_requested()) {
             // The native close button means "back to the tray", not "goodbye".
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -133,15 +153,25 @@ impl eframe::App for TaskerApp {
         };
         if open {
             let ctx = ui.ctx().clone();
-            ctx.show_viewport_immediate(Self::child_id(), child.viewport(), |ui, _class| {
-                if ui.ctx().input(|i| i.viewport().close_requested()) {
-                    let command = match child {
+            let sender = self.window_sender.clone();
+            let hud = Arc::clone(&self.hud);
+            let dashboard = Arc::clone(&self.dashboard);
+            // Deferred windows can repaint independently while their parent is hidden.
+            ctx.show_viewport_deferred(Self::child_id(), child.viewport(), move |ui, _class| {
+                let command = if ui.ctx().input(|i| i.viewport().close_requested()) {
+                    Some(match child {
                         Interface::Hud => Command::CloseHud,
                         Interface::Dashboard => Command::CloseDashboard,
-                    };
-                    self.handle(command, &ctx);
+                    })
                 } else {
-                    self.show(child, ui);
+                    match child {
+                        Interface::Hud => hud.lock().unwrap().show(ui),
+                        Interface::Dashboard => dashboard.lock().unwrap().show(ui),
+                    }
+                };
+                if let Some(command) = command {
+                    let _ = sender.send(command);
+                    ui.ctx().request_repaint_of(egui::ViewportId::ROOT);
                 }
             });
         }
