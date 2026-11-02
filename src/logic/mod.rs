@@ -2,6 +2,8 @@
 pub(crate) enum Command {
     OpenHud,
     OpenDashboard,
+    CloseHud,
+    CloseDashboard,
     Exit,
 }
 
@@ -18,6 +20,8 @@ impl AppState {
         match command {
             Command::OpenHud => self.hud_open = true,
             Command::OpenDashboard => self.dashboard_open = true,
+            Command::CloseHud => self.hud_open = false,
+            Command::CloseDashboard => self.dashboard_open = false,
             Command::Exit => self.exit_requested = true,
         }
     }
