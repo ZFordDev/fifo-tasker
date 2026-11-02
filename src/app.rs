@@ -3,6 +3,7 @@ use eframe::egui;
 use crate::{
     dashboard, hud,
     logic::{AppState, Command},
+    tray::Tray,
 };
 
 #[derive(Clone, Copy, PartialEq)]
@@ -34,15 +35,17 @@ pub(crate) struct TaskerApp {
     root: Interface,
     hud: hud::TaskerApp,
     dashboard: dashboard::DashboardApp,
+    tray: Tray,
 }
 
 impl TaskerApp {
-    pub(crate) fn new(state: AppState, root: Interface) -> Self {
+    pub(crate) fn new(state: AppState, root: Interface, tray: Tray) -> Self {
         Self {
             state,
             root,
             hud: hud::TaskerApp,
             dashboard: dashboard::DashboardApp,
+            tray,
         }
     }
 
@@ -60,6 +63,11 @@ impl TaskerApp {
         let target = match command {
             Command::OpenHud => Interface::Hud,
             Command::OpenDashboard => Interface::Dashboard,
+            Command::Exit => {
+                self.state.handle(command);
+                ctx.send_viewport_cmd_to(egui::ViewportId::ROOT, egui::ViewportCommand::Close);
+                return;
+            }
         };
         self.state.handle(command);
         let id = if target == self.root {
@@ -79,6 +87,16 @@ impl TaskerApp {
 }
 
 impl eframe::App for TaskerApp {
+    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // This also runs when a tray event wakes a hidden root window.
+        while let Some(command) = self.tray.next_command() {
+            self.handle(command, ctx);
+            if self.state.exit_requested {
+                break;
+            }
+        }
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.show(self.root, ui);
 
@@ -100,6 +118,6 @@ impl eframe::App for TaskerApp {
                 }
             });
         }
-        // The root still exits normally until the tray gives us a way back in.
+        // Closing the root still exits normally; hiding it comes in the next stage.
     }
 }
