@@ -1,9 +1,9 @@
+mod app;
 mod dashboard;
 mod hud;
 mod logic;
 
-use eframe::egui;
-use hud::{HUD_DECORATIONS, HUD_HEIGHT, HUD_TITLE, HUD_TRANSPARENT, HUD_WIDTH};
+use app::{Interface, TaskerApp};
 
 fn main() -> eframe::Result<()> {
     // Translate startup arguments into the same commands other entry points will use.
@@ -15,35 +15,20 @@ fn main() -> eframe::Result<()> {
     let mut state = logic::AppState::default();
     state.handle(command);
 
-    if state.dashboard_open {
-        let options = eframe::NativeOptions {
-            viewport: egui::ViewportBuilder::default()
-                .with_inner_size([dashboard::DASHBOARD_WIDTH, dashboard::DASHBOARD_HEIGHT])
-                .with_decorations(dashboard::DASHBOARD_DECORATIONS) // Let the OS wear the frame.
-                .with_transparent(dashboard::DASHBOARD_TRANSPARENT),
-            ..Default::default()
-        };
-        return eframe::run_native(
-            dashboard::DASHBOARD_TITLE,
-            options,
-            Box::new(|_cc| Ok(Box::new(dashboard::DashboardApp))),
-        );
-    }
-
-    // Configure the HUD window.
+    let root = if state.dashboard_open {
+        Interface::Dashboard
+    } else {
+        Interface::Hud
+    };
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([HUD_WIDTH, HUD_HEIGHT])
-            .with_decorations(HUD_DECORATIONS) // Remove the native title bar and borders.
-            .with_transparent(HUD_TRANSPARENT) // Allow the desktop to show through.
-            .with_always_on_top(), // Keep the HUD above other windows.
+        viewport: root.viewport(),
         ..Default::default()
     };
 
-    // Start the application.
+    // One event loop hosts both interfaces; no competing drivers at the wheel.
     eframe::run_native(
-        HUD_TITLE,
+        "FIFO Tasker",
         options,
-        Box::new(|_cc| Ok(Box::new(hud::TaskerApp))),
+        Box::new(move |_cc| Ok(Box::new(TaskerApp::new(state, root)))),
     )
 }
