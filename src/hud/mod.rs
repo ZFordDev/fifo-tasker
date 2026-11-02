@@ -19,6 +19,13 @@ impl TaskerApp {
             ui.add_space(CONTENT_TOP_SPACING);
             ui.heading(HUD_TITLE);
             ui.label(PLACEHOLDER_TEXT);
+            if ui
+                .button("Close HUD")
+                .on_hover_text("Keep FIFO Tasker running in the tray")
+                .clicked()
+            {
+                return Some(Command::CloseHud); // Clocking off the window, not the app.
+            }
             // Temporary doorway until the tray takes over.
             ui.button("Open Dashboard")
                 .clicked()
