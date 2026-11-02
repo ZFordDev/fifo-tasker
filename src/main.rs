@@ -1,11 +1,21 @@
 mod dashboard;
 mod hud;
+mod logic;
 
 use eframe::egui;
 use hud::{HUD_DECORATIONS, HUD_HEIGHT, HUD_TITLE, HUD_TRANSPARENT, HUD_WIDTH};
 
 fn main() -> eframe::Result<()> {
-    if std::env::args().any(|arg| arg == "--dashboard") {
+    // Translate startup arguments into the same commands other entry points will use.
+    let command = if std::env::args().any(|arg| arg == "--dashboard") {
+        logic::Command::OpenDashboard
+    } else {
+        logic::Command::OpenHud
+    };
+    let mut state = logic::AppState::default();
+    state.handle(command);
+
+    if state.dashboard_open {
         let options = eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
                 .with_inner_size([dashboard::DASHBOARD_WIDTH, dashboard::DASHBOARD_HEIGHT])
