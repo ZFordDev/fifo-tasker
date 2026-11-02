@@ -60,9 +60,11 @@ impl TaskerApp {
     }
 
     fn handle(&mut self, command: Command, ctx: &egui::Context) {
-        let target = match command {
-            Command::OpenHud => Interface::Hud,
-            Command::OpenDashboard => Interface::Dashboard,
+        let (target, open) = match command {
+            Command::OpenHud => (Interface::Hud, true),
+            Command::OpenDashboard => (Interface::Dashboard, true),
+            Command::CloseHud => (Interface::Hud, false),
+            Command::CloseDashboard => (Interface::Dashboard, false),
             Command::Exit => {
                 self.state.handle(command);
                 ctx.send_viewport_cmd_to(egui::ViewportId::ROOT, egui::ViewportCommand::Close);
@@ -75,10 +77,20 @@ impl TaskerApp {
         } else {
             Self::child_id()
         };
-        // Reuse the window. The dashboard doesn't need a cloning machine.
-        ctx.send_viewport_cmd_to(id, egui::ViewportCommand::Minimized(false));
-        ctx.send_viewport_cmd_to(id, egui::ViewportCommand::Focus);
-        ctx.request_repaint();
+        if target == self.root {
+            ctx.send_viewport_cmd_to(id, egui::ViewportCommand::Visible(open));
+        }
+        if open {
+            // Reuse the window. The dashboard doesn't need a cloning machine.
+            ctx.send_viewport_cmd_to(id, egui::ViewportCommand::Minimized(false));
+            ctx.send_viewport_cmd_to(id, egui::ViewportCommand::Focus);
+        }
+        // A hidden root needs one UI pass to create or retire its child window.
+        ctx.send_viewport_cmd_to(
+            egui::ViewportId::ROOT,
+            egui::ViewportCommand::RequestPaintWhileHidden,
+        );
+        ctx.request_repaint_of(egui::ViewportId::ROOT);
     }
 
     fn child_id() -> egui::ViewportId {
@@ -95,10 +107,25 @@ impl eframe::App for TaskerApp {
                 break;
             }
         }
+        if !self.state.exit_requested && ctx.input(|i| i.viewport().close_requested()) {
+            // The native close button means "back to the tray", not "goodbye".
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            let command = match self.root {
+                Interface::Hud => Command::CloseHud,
+                Interface::Dashboard => Command::CloseDashboard,
+            };
+            self.handle(command, ctx);
+        }
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        self.show(self.root, ui);
+        let root_open = match self.root {
+            Interface::Hud => self.state.hud_open,
+            Interface::Dashboard => self.state.dashboard_open,
+        };
+        if root_open {
+            self.show(self.root, ui);
+        }
 
         let (child, open) = match self.root {
             Interface::Hud => (Interface::Dashboard, self.state.dashboard_open),
@@ -108,16 +135,15 @@ impl eframe::App for TaskerApp {
             let ctx = ui.ctx().clone();
             ctx.show_viewport_immediate(Self::child_id(), child.viewport(), |ui, _class| {
                 if ui.ctx().input(|i| i.viewport().close_requested()) {
-                    match child {
-                        Interface::Hud => self.state.hud_open = false,
-                        Interface::Dashboard => self.state.dashboard_open = false,
-                    }
-                    ctx.request_repaint(); // Let the parent retire this window next pass.
+                    let command = match child {
+                        Interface::Hud => Command::CloseHud,
+                        Interface::Dashboard => Command::CloseDashboard,
+                    };
+                    self.handle(command, &ctx);
                 } else {
                     self.show(child, ui);
                 }
             });
         }
-        // Closing the root still exits normally; hiding it comes in the next stage.
     }
 }
