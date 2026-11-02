@@ -1,6 +1,7 @@
 mod config;
 mod frame;
 
+use crate::logic::Command;
 use eframe::egui;
 
 use config::{CONTENT_TOP_SPACING, PLACEHOLDER_TEXT};
@@ -9,8 +10,8 @@ pub(crate) use config::{HUD_DECORATIONS, HUD_HEIGHT, HUD_TITLE, HUD_TRANSPARENT,
 
 pub(crate) struct TaskerApp;
 
-impl eframe::App for TaskerApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+impl TaskerApp {
+    pub(crate) fn show(&mut self, ui: &mut egui::Ui) -> Option<Command> {
         frame::show(ui);
 
         // Temporary content while developing the HUD.
@@ -18,6 +19,11 @@ impl eframe::App for TaskerApp {
             ui.add_space(CONTENT_TOP_SPACING);
             ui.heading(HUD_TITLE);
             ui.label(PLACEHOLDER_TEXT);
-        });
+            // Temporary doorway until the tray takes over.
+            ui.button("Open Dashboard")
+                .clicked()
+                .then_some(Command::OpenDashboard)
+        })
+        .inner
     }
 }
