@@ -1,6 +1,7 @@
 mod config;
 mod frame;
 
+use crate::logic::Command;
 use eframe::egui;
 
 use config::{CONTENT_TOP_SPACING, PLACEHOLDER_TEXT};
@@ -12,8 +13,8 @@ pub(crate) use config::{
 
 pub(crate) struct DashboardApp;
 
-impl eframe::App for DashboardApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+impl DashboardApp {
+    pub(crate) fn show(&mut self, ui: &mut egui::Ui) -> Option<Command> {
         frame::show(ui);
 
         // Temporary content while developing the dashboard.
@@ -21,6 +22,9 @@ impl eframe::App for DashboardApp {
             ui.add_space(CONTENT_TOP_SPACING);
             ui.heading(DASHBOARD_TITLE);
             ui.label(PLACEHOLDER_TEXT);
-        });
+            // Temporary doorway until the tray takes over.
+            ui.button("Open HUD").clicked().then_some(Command::OpenHud)
+        })
+        .inner
     }
 }
