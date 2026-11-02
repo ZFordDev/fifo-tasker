@@ -1,12 +1,17 @@
 mod app;
 mod dashboard;
 mod hud;
+mod instance;
 mod logic;
 mod tray;
 
 use app::{Interface, TaskerApp};
 
-fn main() -> eframe::Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Only the owner creates windows or a tray; later launches knock on its door.
+    let Some(instance) = instance::Instance::acquire()? else {
+        return Ok(());
+    };
     // Translate startup arguments into the same commands other entry points will use.
     let command = if std::env::args().any(|arg| arg == "--dashboard") {
         logic::Command::OpenDashboard
@@ -33,7 +38,9 @@ fn main() -> eframe::Result<()> {
         Box::new(move |cc| {
             // Create the tray on the GUI thread once the event loop is running.
             let tray = tray::Tray::new(cc.egui_ctx.clone())?;
-            Ok(Box::new(TaskerApp::new(state, root, tray)))
+            instance.attach(cc.egui_ctx.clone());
+            Ok(Box::new(TaskerApp::new(state, root, tray, instance)))
         }),
-    )
+    )?;
+    Ok(())
 }
