@@ -26,3 +26,6 @@ impl AppState {
         }
     }
 }
+// Stage 2 will connect this model to file loading.
+#[expect(dead_code, reason = "Task data is defined before storage is connected")]
+pub(crate) mod tasks;
