@@ -9,6 +9,8 @@ pub(crate) enum Command {
 
 #[derive(Default)]
 pub(crate) struct AppState {
+    pub(crate) tasks: tasks::TaskDocument,
+    pub(crate) task_load_error: Option<String>,
     pub(crate) hud_open: bool,
     pub(crate) dashboard_open: bool,
     pub(crate) exit_requested: bool,
@@ -26,6 +28,4 @@ impl AppState {
         }
     }
 }
-// Stage 2 will connect this model to file loading.
-#[expect(dead_code, reason = "Task data is defined before storage is connected")]
 pub(crate) mod tasks;
