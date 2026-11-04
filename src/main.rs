@@ -3,6 +3,7 @@ mod dashboard;
 mod hud;
 mod instance;
 mod logic;
+mod storage;
 mod tray;
 
 use app::{Interface, TaskerApp};
@@ -19,6 +20,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         logic::Command::OpenHud
     };
     let mut state = logic::AppState::default();
+    // Only the owner reads task data; later launches have already forwarded and exited.
+    let loaded = storage::task_file().and_then(|path| {
+        eprintln!("Task data file: {}", path.display());
+        storage::load(&path)
+    });
+    match loaded {
+        Ok(Some(tasks)) => state.tasks = tasks,
+        Ok(None) => eprintln!("No task data file yet; starting with an empty list."),
+        Err(error) => state.task_load_error = Some(error.to_string()),
+    }
+    if let Some(error) = &state.task_load_error {
+        eprintln!("{error}. Starting with an empty list; the file has been left unchanged.");
+    } else {
+        eprintln!("Loaded {} tasks.", state.tasks.tasks().len());
+    }
     state.handle(command);
 
     let root = if state.dashboard_open {
