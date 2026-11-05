@@ -5,12 +5,20 @@ use crate::logic::tasks::TaskData;
 // Both windows read the same queue. Neither gets to invent its own running order.
 pub(crate) fn show(ui: &mut egui::Ui, data: &TaskData) {
     egui::Frame::new().inner_margin(16.0).show(ui, |ui| {
+        if let Some(error) = &data.watch_error {
+            ui.colored_label(
+                ui.visuals().error_fg_color,
+                "Automatic task updates unavailable.",
+            );
+            ui.label(error);
+        }
         if let Some(error) = &data.load_error {
             ui.colored_label(ui.visuals().error_fg_color, "Could not load task data.");
             ui.label(error);
             if data.document.tasks().is_empty() {
                 return; // A failed load isn't an empty queue we can confidently report.
             }
+            ui.label("Showing the last valid task list.");
         }
         if data.document.tasks().is_empty() {
             ui.label("No tasks yet.");
