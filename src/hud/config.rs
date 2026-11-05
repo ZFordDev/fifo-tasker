@@ -14,9 +14,8 @@ pub(super) const RESIZE_CORNER_SIZE: f32 = 16.0;
 pub(super) const WORKSPACE_RGBA: [u8; 4] = [28, 37, 52, 200];
 pub(super) const BORDER_RGBA: [u8; 4] = [17, 25, 40, 200];
 
-// Window title and temporary workspace content.
+// Window title and content spacing.
 pub(crate) const HUD_TITLE: &str = "FIFO Tasker";
-pub(super) const PLACEHOLDER_TEXT: &str = "Hello, FIFO Tasker!";
 pub(super) const CONTENT_TOP_SPACING: f32 = 20.0;
 
 // Derived values: calculated from the configuration above.
