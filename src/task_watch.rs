@@ -20,6 +20,36 @@ pub(crate) struct TaskWatcher {
     trigger: SyncSender<()>,
     stop: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
+    reload_handle: ReloadHandle,
+}
+
+type ReloadResult = Result<u64, String>;
+
+#[derive(Clone)]
+pub(crate) struct ReloadHandle {
+    requests: SyncSender<SyncSender<ReloadResult>>,
+    trigger: SyncSender<()>,
+    stop: Arc<AtomicBool>,
+}
+
+impl ReloadHandle {
+    pub(crate) fn is_active(&self) -> bool {
+        !self.stop.load(Ordering::Acquire)
+    }
+
+    pub(crate) fn reload(&self, timeout: Duration) -> ReloadResult {
+        if !self.is_active() {
+            return Err("Task loader is shutting down".into());
+        }
+        let (reply, result) = mpsc::sync_channel(1);
+        self.requests
+            .try_send(reply)
+            .map_err(|error| format!("Cannot queue reload: {error}"))?;
+        let _ = self.trigger.try_send(());
+        result.recv_timeout(timeout).map_err(|error| {
+            format!("Reload did not complete: {error}; its outcome may be unknown")
+        })?
+    }
 }
 
 impl TaskWatcher {
@@ -59,6 +89,12 @@ impl TaskWatcher {
             .map_err(io::Error::other)?;
 
         let stop = Arc::new(AtomicBool::new(false));
+        let (requests, reload_requests) = mpsc::sync_channel::<SyncSender<ReloadResult>>(8);
+        let reload_handle = ReloadHandle {
+            requests,
+            trigger: trigger.clone(),
+            stop: Arc::clone(&stop),
+        };
         let worker_stop = Arc::clone(&stop);
         let worker = thread::Builder::new()
             .name("task-file-reload".into())
@@ -85,8 +121,14 @@ impl TaskWatcher {
                     if worker_stop.load(Ordering::Acquire) {
                         break;
                     }
-                    if reload(&path, &data) {
+                    // Only acknowledge requests that arrived before this read began.
+                    let replies: Vec<_> = reload_requests.try_iter().collect();
+                    let (changed, result) = reload(&path, &data);
+                    if changed {
                         repaint(&ctx);
+                    }
+                    for reply in replies {
+                        let _ = reply.send(result.clone());
                     }
                 }
             })?;
@@ -96,11 +138,16 @@ impl TaskWatcher {
             trigger,
             stop,
             worker: Some(worker),
+            reload_handle,
         })
+    }
+
+    pub(crate) fn reload_handle(&self) -> ReloadHandle {
+        self.reload_handle.clone()
     }
 }
 
-fn reload(path: &Path, shared: &RwLock<TaskData>) -> bool {
+fn reload(path: &Path, shared: &RwLock<TaskData>) -> (bool, ReloadResult) {
     let loaded = storage::load(path); // File I/O and validation never hold the shared-state lock.
     let mut data = shared.write().unwrap();
     let error = match loaded {
@@ -111,17 +158,22 @@ fn reload(path: &Path, shared: &RwLock<TaskData>) -> bool {
                 data.revision = data.revision.saturating_add(1);
             }
             let recovered = data.load_error.take().is_some();
-            return changed || recovered;
+            return (changed || recovered, Ok(data.revision));
         }
-        Ok(None) if data.revision == 0 && data.load_error.is_none() => return false,
+        Ok(None) if data.revision == 0 && data.load_error.is_none() => {
+            return (
+                false,
+                Err(format!("Task data file is missing: {}", path.display())),
+            );
+        }
         Ok(None) => format!("Task data file is missing: {}", path.display()),
         Err(error) => error.to_string(),
     };
     if data.load_error.as_ref() == Some(&error) {
-        return false;
+        return (false, Err(error));
     }
-    data.load_error = Some(error);
-    true
+    data.load_error = Some(error.clone());
+    (true, Err(error))
 }
 
 fn repaint(ctx: &egui::Context) {
