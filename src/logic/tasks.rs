@@ -8,9 +8,11 @@ const SCHEMA_VERSION: u32 = 1;
 pub(crate) struct TaskData {
     pub(crate) document: TaskDocument,
     pub(crate) load_error: Option<String>,
+    pub(crate) watch_error: Option<String>,
+    pub(crate) revision: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Task {
     pub(crate) id: String,
@@ -18,7 +20,7 @@ pub(crate) struct Task {
     pub(crate) completed: bool,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(try_from = "RawTaskDocument")]
 pub(crate) struct TaskDocument {
     schema_version: u32,
