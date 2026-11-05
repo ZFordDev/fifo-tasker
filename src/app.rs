@@ -8,6 +8,7 @@ use crate::{
     dashboard, hud,
     instance::Instance,
     logic::{AppState, Command},
+    task_watch::TaskWatcher,
     tray::Tray,
 };
 
@@ -44,10 +45,17 @@ pub(crate) struct TaskerApp {
     window_commands: Receiver<Command>,
     tray: Tray,
     instance: Instance,
+    _task_watcher: Option<TaskWatcher>, // Keep the subscription alive for the application's lifetime.
 }
 
 impl TaskerApp {
-    pub(crate) fn new(state: AppState, root: Interface, tray: Tray, instance: Instance) -> Self {
+    pub(crate) fn new(
+        state: AppState,
+        root: Interface,
+        tray: Tray,
+        instance: Instance,
+        task_watcher: Option<TaskWatcher>,
+    ) -> Self {
         let (window_sender, window_commands) = mpsc::channel();
         Self {
             state,
@@ -58,6 +66,7 @@ impl TaskerApp {
             window_commands,
             tray,
             instance,
+            _task_watcher: task_watcher,
         }
     }
 
