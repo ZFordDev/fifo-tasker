@@ -9,8 +9,7 @@ pub(crate) enum Command {
 
 #[derive(Default)]
 pub(crate) struct AppState {
-    pub(crate) tasks: tasks::TaskDocument,
-    pub(crate) task_load_error: Option<String>,
+    pub(crate) task_data: Arc<RwLock<tasks::TaskData>>,
     pub(crate) hud_open: bool,
     pub(crate) dashboard_open: bool,
     pub(crate) exit_requested: bool,
@@ -29,3 +28,4 @@ impl AppState {
     }
 }
 pub(crate) mod tasks;
+use std::sync::{Arc, RwLock};
