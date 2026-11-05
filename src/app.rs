@@ -62,9 +62,12 @@ impl TaskerApp {
     }
 
     fn show(&mut self, interface: Interface, ui: &mut egui::Ui) {
-        let command = match interface {
-            Interface::Hud => self.hud.lock().unwrap().show(ui),
-            Interface::Dashboard => self.dashboard.lock().unwrap().show(ui),
+        let command = {
+            let data = self.state.task_data.read().unwrap();
+            match interface {
+                Interface::Hud => self.hud.lock().unwrap().show(ui, &data),
+                Interface::Dashboard => self.dashboard.lock().unwrap().show(ui, &data),
+            }
         };
         if let Some(command) = command {
             self.handle(command, ui.ctx());
@@ -156,6 +159,7 @@ impl eframe::App for TaskerApp {
             let sender = self.window_sender.clone();
             let hud = Arc::clone(&self.hud);
             let dashboard = Arc::clone(&self.dashboard);
+            let task_data = Arc::clone(&self.state.task_data);
             // Deferred windows can repaint independently while their parent is hidden.
             ctx.show_viewport_deferred(Self::child_id(), child.viewport(), move |ui, _class| {
                 let command = if ui.ctx().input(|i| i.viewport().close_requested()) {
@@ -164,9 +168,10 @@ impl eframe::App for TaskerApp {
                         Interface::Dashboard => Command::CloseDashboard,
                     })
                 } else {
+                    let data = task_data.read().unwrap();
                     match child {
-                        Interface::Hud => hud.lock().unwrap().show(ui),
-                        Interface::Dashboard => dashboard.lock().unwrap().show(ui),
+                        Interface::Hud => hud.lock().unwrap().show(ui, &data),
+                        Interface::Dashboard => dashboard.lock().unwrap().show(ui, &data),
                     }
                 };
                 if let Some(command) = command {
