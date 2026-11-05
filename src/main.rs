@@ -78,6 +78,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None
                 }
             };
+            instance.serve_tasks(
+                std::sync::Arc::clone(&state.task_data),
+                watcher.as_ref().map(task_watch::TaskWatcher::reload_handle),
+            );
             Ok(Box::new(TaskerApp::new(
                 state, root, tray, instance, watcher,
             )))
