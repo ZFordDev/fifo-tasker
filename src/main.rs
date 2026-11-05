@@ -4,6 +4,7 @@ mod hud;
 mod instance;
 mod logic;
 mod storage;
+mod task_list;
 mod tray;
 
 use app::{Interface, TaskerApp};
@@ -25,15 +26,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Task data file: {}", path.display());
         storage::load(&path)
     });
-    match loaded {
-        Ok(Some(tasks)) => state.tasks = tasks,
-        Ok(None) => eprintln!("No task data file yet; starting with an empty list."),
-        Err(error) => state.task_load_error = Some(error.to_string()),
-    }
-    if let Some(error) = &state.task_load_error {
-        eprintln!("{error}. Starting with an empty list; the file has been left unchanged.");
-    } else {
-        eprintln!("Loaded {} tasks.", state.tasks.tasks().len());
+    {
+        let mut data = state.task_data.write().unwrap();
+        match loaded {
+            Ok(Some(tasks)) => data.document = tasks,
+            Ok(None) => eprintln!("No task data file yet; starting with an empty list."),
+            Err(error) => data.load_error = Some(error.to_string()),
+        }
+        if let Some(error) = &data.load_error {
+            eprintln!("{error}. Starting with an empty list; the file has been left unchanged.");
+        } else {
+            eprintln!("Loaded {} tasks.", data.document.tasks().len());
+        }
     }
     state.handle(command);
 
